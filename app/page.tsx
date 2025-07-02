@@ -10,6 +10,7 @@ import TechInfoSection from "@/components/tech-info-section"
 import CrowdfundingSection from "@/components/crowdfunding-section"
 import Navigation from "@/components/navigation"
 import Footer from "@/components/footer"
+import LiveStatsBanner from "@/components/live-stats-banner"
 
 export default function HomePage() {
   const [currentSection, setCurrentSection] = useState("hero")
@@ -39,6 +40,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50">
+      <LiveStatsBanner />
       <Navigation currentSection={currentSection} />
 
       <section id="hero">
