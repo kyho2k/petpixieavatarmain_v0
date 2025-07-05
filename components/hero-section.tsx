@@ -1,185 +1,135 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowDown, Sparkles, Zap } from "lucide-react"
+import { Sparkles, Heart, Camera, Zap } from "lucide-react"
 import Image from "next/image"
 
-export default function HeroSection() {
-  const [currentSlide, setCurrentSlide] = useState(0)
-
-  const beforeAfterExamples = [
-    {
-      before: "/placeholder.svg?height=400&width=400",
-      after: "/placeholder.svg?height=400&width=400",
-      title: "골든 리트리버 → 마법사",
-    },
-    {
-      before: "/placeholder.svg?height=400&width=400",
-      after: "/placeholder.svg?height=400&width=400",
-      title: "페르시안 고양이 → 공주",
-    },
-    {
-      before: "/placeholder.svg?height=400&width=400",
-      after: "/placeholder.svg?height=400&width=400",
-      title: "비글 → 기사",
-    },
-  ]
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % beforeAfterExamples.length)
-    }, 4000)
-    return () => clearInterval(timer)
-  }, [beforeAfterExamples.length])
-
+export function HeroSection() {
   const scrollToDemo = () => {
-    const demoSection = document.getElementById("demo")
-    if (demoSection) {
-      demoSection.scrollIntoView({ behavior: "smooth" })
-    }
+    document.getElementById("demo-section")?.scrollIntoView({ behavior: "smooth" })
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Background Animation */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100">
-        <div className="absolute inset-0 bg-[url('/placeholder.svg?height=100&width=100')] opacity-5"></div>
+    <section className="relative min-h-screen flex items-center justify-center px-4 py-20">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
       </div>
 
-      {/* Floating Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <Sparkles className="absolute top-20 left-10 h-6 w-6 text-purple-400 animate-pulse" />
-        <Zap className="absolute top-40 right-20 h-8 w-8 text-pink-400 animate-bounce" />
-        <Sparkles className="absolute bottom-40 left-20 h-4 w-4 text-blue-400 animate-pulse delay-1000" />
-      </div>
+      <div className="relative z-10 max-w-6xl mx-auto text-center">
+        {/* Badge */}
+        <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium bg-white/80 backdrop-blur-sm">
+          <Sparkles className="w-4 h-4 mr-2" />
+          AI 기반 펫 아바타 생성 서비스
+        </Badge>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div className="text-center lg:text-left">
-            <Badge className="mb-6 bg-purple-100 text-purple-800 hover:bg-purple-200">
-              <Sparkles className="h-4 w-4 mr-2" />
-              AI 기술로 만드는 마법 같은 경험
-            </Badge>
+        {/* Main heading */}
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent mb-6">
+          우리 아이의
+          <br />
+          <span className="relative">
+            특별한 순간을
+            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+          </span>
+          <br />
+          AI로 만나보세요
+        </h1>
 
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              내 펫을{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-                판타지 주인공
-              </span>
-              으로!
-            </h1>
+        {/* Subtitle */}
+        <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+          단 한 장의 사진으로 반려동물의 귀여운 3D 아바타와 다양한 스타일의 캐릭터 이미지를 생성하세요.
+          <br />
+          <span className="text-purple-600 font-semibold">Meshy AI + LightX AI</span>의 최신 기술로 더욱 생생하게!
+        </p>
 
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              반려동물 사진 한 장으로 여러 장의 애니메이션 스타일 아바타를 생성해보세요.
-              <br className="hidden sm:block" />단 1분만에 마법 같은 변신을 경험할 수 있습니다.
-            </p>
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          <Button
+            size="lg"
+            onClick={scrollToDemo}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+          >
+            <Camera className="w-5 h-5 mr-2" />
+            지금 무료로 체험하기
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => document.getElementById("tech-info")?.scrollIntoView({ behavior: "smooth" })}
+            className="border-2 border-purple-300 text-purple-600 hover:bg-purple-50 px-8 py-4 text-lg font-semibold rounded-full"
+          >
+            <Zap className="w-5 h-5 mr-2" />
+            기술 정보 보기
+          </Button>
+        </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button
-                size="lg"
-                onClick={scrollToDemo}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 text-lg"
-              >
-                <Zap className="h-5 w-5 mr-2" />
-                1분 만에 체험하기
-              </Button>
-
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-purple-300 text-purple-700 hover:bg-purple-50 px-8 py-4 text-lg bg-transparent"
-              >
-                작품 갤러리 보기
-              </Button>
-            </div>
-
-            {/* Stats */}
-            <div className="flex flex-wrap gap-6 mt-8 justify-center lg:justify-start">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">1,247</div>
-                <div className="text-sm text-gray-500">생성된 아바타</div>
+        {/* Feature highlights */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-pink-600">58초</div>
-                <div className="text-sm text-gray-500">평균 처리시간</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">80%</div>
-                <div className="text-sm text-gray-500">펀딩 달성률</div>
-              </div>
-            </div>
-          </div>
+              <h3 className="font-semibold text-lg mb-2">AI 3D 모델링</h3>
+              <p className="text-gray-600 text-sm">Meshy AI로 사진 한 장을 360도 회전 가능한 3D 모델로 변환</p>
+            </CardContent>
+          </Card>
 
-          {/* Right Content - Before/After Slider */}
-          <div className="relative">
-            <div className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-auto">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{beforeAfterExamples[currentSlide].title}</h3>
-                <div className="flex justify-center space-x-2">
-                  {beforeAfterExamples.map((_, index) => (
-                    <div
-                      key={index}
-                      className={`h-2 w-2 rounded-full transition-colors ${
-                        index === currentSlide ? "bg-purple-600" : "bg-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="w-6 h-6 text-white" />
               </div>
+              <h3 className="font-semibold text-lg mb-2">다양한 스타일</h3>
+              <p className="text-gray-600 text-sm">디즈니, 애니메이션, 픽셀아트 등 원하는 스타일로 캐릭터 생성</p>
+            </CardContent>
+          </Card>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="relative mb-3">
-                    <Image
-                      src={beforeAfterExamples[currentSlide].before || "/placeholder.svg"}
-                      alt="Before"
-                      width={150}
-                      height={150}
-                      className="rounded-lg shadow-md mx-auto"
-                    />
-                    <Badge className="absolute -top-2 -right-2 bg-gray-100 text-gray-800">원본</Badge>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <div className="relative mb-3">
-                    <Image
-                      src={beforeAfterExamples[currentSlide].after || "/placeholder.svg"}
-                      alt="After"
-                      width={150}
-                      height={150}
-                      className="rounded-lg shadow-md mx-auto"
-                    />
-                    <Badge className="absolute -top-2 -right-2 bg-purple-100 text-purple-800">AI 결과</Badge>
-                  </div>
-                </div>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Camera className="w-6 h-6 text-white" />
               </div>
+              <h3 className="font-semibold text-lg mb-2">실시간 생성</h3>
+              <p className="text-gray-600 text-sm">평균 60초 내에 고품질 결과물을 실시간으로 확인</p>
+            </CardContent>
+          </Card>
+        </div>
 
-              <div className="flex justify-center mt-4">
-                <ArrowDown className="h-6 w-6 text-purple-600 animate-bounce" />
-              </div>
-            </div>
-
-            {/* Decorative Elements */}
-            <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-20 animate-pulse"></div>
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-20 animate-pulse delay-1000"></div>
+        {/* Sample showcase */}
+        <div className="mt-16">
+          <p className="text-gray-500 mb-6">
+            이미 <span className="font-semibold text-purple-600">10,000+</span>명이 체험했어요!
+          </p>
+          <div className="flex justify-center space-x-4 opacity-75">
+            <Image
+              src="/placeholder.svg?height=80&width=80"
+              alt="Sample 1"
+              width={80}
+              height={80}
+              className="rounded-full border-4 border-white shadow-lg"
+            />
+            <Image
+              src="/placeholder.svg?height=80&width=80"
+              alt="Sample 2"
+              width={80}
+              height={80}
+              className="rounded-full border-4 border-white shadow-lg"
+            />
+            <Image
+              src="/placeholder.svg?height=80&width=80"
+              alt="Sample 3"
+              width={80}
+              height={80}
+              className="rounded-full border-4 border-white shadow-lg"
+            />
           </div>
         </div>
       </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-        <button
-          onClick={scrollToDemo}
-          className="flex flex-col items-center text-gray-500 hover:text-purple-600 transition-colors"
-        >
-          <span className="text-sm mb-2">체험해보기</span>
-          <ArrowDown className="h-5 w-5 animate-bounce" />
-        </button>
-      </div>
-    </div>
+    </section>
   )
 }

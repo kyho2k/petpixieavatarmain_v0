@@ -1,29 +1,40 @@
-// app/api/generate/route.ts
-import { type NextRequest, NextResponse } from "next/server"
-import { startPrediction } from "@/lib/replicate"
+import { NextResponse } from "next/server"
+import { nanoid } from "nanoid"
+import { createPrediction } from "@/lib/predictions"
+
+interface GenerateBody {
+  imageUrl: string
+  styles?: string[]
+  pipeline?: string
+}
 
 /**
  * POST /api/generate
- * Body: { imageUrl: string; prompt?: string }
+ *
+ * Starts a (mock) generation job and returns a prediction ID.
+ * In production you would call your Replicate / Meshy pipeline here.
  */
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { imageUrl, prompt } = await req.json()
+    const body = (await req.json()) as Partial<GenerateBody>
 
-    if (!imageUrl) {
-      return NextResponse.json({ error: "Image URL is required" }, { status: 400 })
+    if (!body.imageUrl) {
+      return NextResponse.json({ error: "imageUrl is required" }, { status: 400 })
     }
 
-    const { id, status, detail } = await startPrediction({ imageUrl, prompt })
+    // 1. Create a new prediction entry in our in-memory store
+    const id = nanoid()
+    createPrediction(id)
 
-    // If Replicate returned an error message, bubble it up
-    if (status === "failed") {
-      return NextResponse.json({ error: detail }, { status: 500 })
-    }
-
-    return NextResponse.json({ id, status })
+    // 2. Return the prediction ID
+    return NextResponse.json({ id })
   } catch (err) {
-    console.error("Generate error:", err)
-    return NextResponse.json({ error: "Unexpected error starting generation" }, { status: 500 })
+    console.error("POST /api/generate error:", err)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
+}
+
+/* (optional) GET handler for debugging – returns 405 for now */
+export function GET() {
+  return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 })
 }

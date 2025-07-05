@@ -1,71 +1,42 @@
 import type { NextRequest } from "next/server"
+import { getSnapshot } from "@/lib/predictions"
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const id = searchParams.get("id")
+  const id = request.nextUrl.searchParams.get("id")
+  if (!id) return new Response("Missing id", { status: 400 })
 
-  if (!id) {
-    return new Response("Missing prediction ID", { status: 400 })
-  }
+  const encoder = new TextEncoder()
+  const dataFrame = (obj: unknown) => encoder.encode(`data: ${JSON.stringify(obj)}\n\n`)
 
   const stream = new ReadableStream({
     start(controller) {
-      const sendEvent = (data: any) => {
-        controller.enqueue(`data: ${JSON.stringify(data)}\n\n`)
-      }
+      controller.enqueue(encoder.encode(": connected\n\n"))
 
-      const pollPrediction = async () => {
-        try {
-          const response = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
-            headers: {
-              Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,
-            },
-          })
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch prediction")
-          }
-
-          const prediction = await response.json()
-
-          // Calculate progress based on status
-          let progress = 0
-          if (prediction.status === "starting") progress = 10
-          else if (prediction.status === "processing") progress = 50
-          else if (prediction.status === "succeeded") progress = 100
-          else if (prediction.status === "failed") progress = 0
-
-          sendEvent({
-            status: prediction.status,
-            progress,
-            output: prediction.output,
-            error: prediction.error,
-            estimatedTime: prediction.status === "processing" ? 30 : 0,
-          })
-
-          if (prediction.status === "succeeded" || prediction.status === "failed") {
-            controller.close()
-            return
-          }
-
-          // Continue polling
-          setTimeout(pollPrediction, 2000)
-        } catch (error) {
-          sendEvent({
-            status: "failed",
-            error: "Failed to fetch prediction status",
-          })
+      const send = () => {
+        const snap = getSnapshot(id)
+        if (!snap) {
+          controller.enqueue(dataFrame({ status: "failed", error: "Not found" }))
           controller.close()
+          return
         }
+
+        controller.enqueue(dataFrame(snap))
+
+        if (snap.status === "succeeded") {
+          controller.close()
+          return
+        }
+
+        setTimeout(send, 1000)
       }
 
-      pollPrediction()
+      send()
     },
   })
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream",
+      "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
     },

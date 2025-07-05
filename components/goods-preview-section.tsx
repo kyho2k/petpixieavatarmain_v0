@@ -1,309 +1,219 @@
 "use client"
 
-import { useState, Suspense } from "react"
-import { Canvas } from "@react-three/fiber"
-import { OrbitControls, Environment, Text } from "@react-three/drei"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { RotateCcw, Smartphone, Coffee, Shirt } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { RotateCcw, ZoomIn, Heart, ShoppingCart } from "lucide-react"
+import Image from "next/image"
 
-interface GoodsPreviewSectionProps {
-  sampleImage?: string
+const REWARD_TIERS = [
+  {
+    id: "basic",
+    price: "10,000원",
+    title: "디지털 캐릭터",
+    description: "고해상도 PNG 이미지 4장",
+    items: ["4가지 스타일 캐릭터 이미지", "고해상도 PNG (2048x2048)", "상업적 이용 가능"],
+    popular: false,
+  },
+  {
+    id: "premium",
+    price: "30,000원",
+    title: "캐릭터 + 머그컵",
+    description: "디지털 이미지 + 커스텀 머그컵",
+    items: ["디지털 캐릭터 이미지 4장", "커스텀 머그컵 1개", "무료 배송"],
+    popular: true,
+  },
+  {
+    id: "deluxe",
+    price: "70,000원",
+    title: "풀 패키지",
+    description: "디지털 + 티셔츠 + 액자 세트",
+    items: ["디지털 캐릭터 이미지 4장", "커스텀 티셔츠 1장", "캔버스 액자 1개", "무료 배송", "3D 모델 파일"],
+    popular: false,
+  },
+]
+
+const PRODUCT_PREVIEWS = {
+  basic: {
+    type: "digital",
+    image: "/placeholder.svg?height=300&width=300",
+    title: "디지털 캐릭터 이미지",
+  },
+  premium: {
+    type: "mug",
+    image: "/placeholder.svg?height=300&width=300",
+    title: "커스텀 머그컵",
+  },
+  deluxe: {
+    type: "bundle",
+    image: "/placeholder.svg?height=300&width=300",
+    title: "풀 패키지 세트",
+  },
 }
 
-// 3D 머그컵 컴포넌트
-function MugModel({ texture }: { texture?: string }) {
-  return (
-    <group>
-      {/* 머그컵 본체 */}
-      <mesh position={[0, 0, 0]}>
-        <cylinderGeometry args={[1, 1, 2, 32]} />
-        <meshStandardMaterial color="#ffffff" />
-      </mesh>
+export function GoodsPreviewSection() {
+  const [selectedTier, setSelectedTier] = useState("premium")
+  const [isRotating, setIsRotating] = useState(false)
 
-      {/* 손잡이 */}
-      <mesh position={[1.2, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <torusGeometry args={[0.3, 0.1, 8, 16]} />
-        <meshStandardMaterial color="#ffffff" />
-      </mesh>
-
-      {/* 이미지 텍스처 (앞면) */}
-      <mesh position={[0, 0, 1.01]}>
-        <planeGeometry args={[1.5, 1.5]} />
-        <meshStandardMaterial color="#ffffff" />
-        <Text position={[0, 0, 0.01]} fontSize={0.2} color="#666" anchorX="center" anchorY="middle">
-          Your Pet Avatar
-        </Text>
-      </mesh>
-    </group>
-  )
-}
-
-// 3D 티셔츠 컴포넌트
-function TShirtModel({ texture }: { texture?: string }) {
-  return (
-    <group>
-      {/* 티셔츠 본체 */}
-      <mesh>
-        <boxGeometry args={[2, 2.5, 0.1]} />
-        <meshStandardMaterial color="#4f46e5" />
-      </mesh>
-
-      {/* 소매 */}
-      <mesh position={[-1.2, 0.8, 0]}>
-        <boxGeometry args={[0.8, 1, 0.1]} />
-        <meshStandardMaterial color="#4f46e5" />
-      </mesh>
-      <mesh position={[1.2, 0.8, 0]}>
-        <boxGeometry args={[0.8, 1, 0.1]} />
-        <meshStandardMaterial color="#4f46e5" />
-      </mesh>
-
-      {/* 프린트 영역 */}
-      <mesh position={[0, 0.2, 0.06]}>
-        <planeGeometry args={[1.2, 1.2]} />
-        <meshStandardMaterial color="#ffffff" />
-        <Text position={[0, 0, 0.01]} fontSize={0.15} color="#666" anchorX="center" anchorY="middle">
-          Pet Avatar
-        </Text>
-      </mesh>
-    </group>
-  )
-}
-
-// 3D 폰케이스 컴포넌트
-function PhoneCaseModel({ texture }: { texture?: string }) {
-  return (
-    <group>
-      {/* 폰케이스 본체 */}
-      <mesh>
-        <boxGeometry args={[1, 2, 0.2]} />
-        <meshStandardMaterial color="#1f2937" />
-      </mesh>
-
-      {/* 화면 영역 */}
-      <mesh position={[0, 0, 0.11]}>
-        <planeGeometry args={[0.8, 1.6]} />
-        <meshStandardMaterial color="#ffffff" />
-        <Text position={[0, 0, 0.01]} fontSize={0.1} color="#666" anchorX="center" anchorY="middle">
-          Your Pet
-        </Text>
-      </mesh>
-
-      {/* 카메라 홀 */}
-      <mesh position={[-0.3, 0.7, 0.11]}>
-        <circleGeometry args={[0.1]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-    </group>
-  )
-}
-
-export default function GoodsPreviewSection({ sampleImage }: GoodsPreviewSectionProps) {
-  const [selectedProduct, setSelectedProduct] = useState<"mug" | "tshirt" | "phonecase">("mug")
-  const [isARSupported, setIsARSupported] = useState(false)
-
-  const products = [
-    {
-      id: "mug" as const,
-      name: "머그컵",
-      icon: Coffee,
-      description: "매일 사용하는 머그컵에 우리 아이를",
-      price: "25,000원",
-    },
-    {
-      id: "tshirt" as const,
-      name: "티셔츠",
-      icon: Shirt,
-      description: "편안한 티셔츠로 우리 아이와 함께",
-      price: "35,000원",
-    },
-    {
-      id: "phonecase" as const,
-      name: "폰케이스",
-      icon: Smartphone,
-      description: "언제나 함께하는 폰케이스",
-      price: "20,000원",
-    },
-  ]
-
-  const renderModel = () => {
-    switch (selectedProduct) {
-      case "mug":
-        return <MugModel texture={sampleImage} />
-      case "tshirt":
-        return <TShirtModel texture={sampleImage} />
-      case "phonecase":
-        return <PhoneCaseModel texture={sampleImage} />
-      default:
-        return <MugModel texture={sampleImage} />
-    }
+  const handleRotate = () => {
+    setIsRotating(true)
+    setTimeout(() => setIsRotating(false), 1000)
   }
 
+  const selectedReward = REWARD_TIERS.find((tier) => tier.id === selectedTier)
+  const selectedPreview = PRODUCT_PREVIEWS[selectedTier as keyof typeof PRODUCT_PREVIEWS]
+
   return (
-    <div className="py-20 bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 bg-white">
+      <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <Badge className="mb-4 bg-green-100 text-green-800">
-            <RotateCcw className="h-4 w-4 mr-2" />
-            3D 미리보기
+          <Badge variant="secondary" className="mb-4">
+            굿즈 미리보기
           </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">내 펫 캐릭터 굿즈로 만나보기</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            생성된 AI 아바타가 실제 굿즈에 어떻게 적용되는지 3D로 미리 확인해보세요
+          <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+            내 캐릭터로 만든 굿즈를 미리 확인해보세요
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            리워드 옵션을 선택하면 실제로 받게 될 상품을 3D로 미리 볼 수 있어요
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* 3D Viewer */}
-          <div className="relative">
-            <Card className="overflow-hidden shadow-2xl bg-gradient-to-br from-gray-100 to-gray-200">
-              <CardContent className="p-0">
-                <div className="h-96 md:h-[500px] relative">
-                  <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-                    <Suspense fallback={null}>
-                      <ambientLight intensity={0.5} />
-                      <directionalLight position={[10, 10, 5]} intensity={1} />
-                      <Environment preset="studio" />
+        <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+          {/* Left: Reward Selection */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">리워드 선택</h3>
 
-                      {renderModel()}
-
-                      <OrbitControls
-                        enablePan={false}
-                        enableZoom={true}
-                        minDistance={3}
-                        maxDistance={8}
-                        autoRotate
-                        autoRotateSpeed={1}
-                      />
-                    </Suspense>
-                  </Canvas>
-
-                  {/* 3D 조작 안내 */}
-                  <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-2 rounded-lg text-sm">
-                    <RotateCcw className="h-4 w-4 inline mr-2" />
-                    드래그하여 회전
+            {REWARD_TIERS.map((tier) => (
+              <Card
+                key={tier.id}
+                className={`cursor-pointer transition-all duration-300 ${
+                  selectedTier === tier.id ? "ring-2 ring-purple-500 shadow-lg" : "hover:shadow-md"
+                }`}
+                onClick={() => setSelectedTier(tier.id)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="text-lg font-semibold text-gray-900">{tier.title}</h4>
+                        {tier.popular && <Badge className="bg-gradient-to-r from-pink-500 to-purple-500">인기</Badge>}
+                      </div>
+                      <p className="text-gray-600 text-sm mb-2">{tier.description}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-purple-600">{tier.price}</div>
+                    </div>
                   </div>
 
-                  {/* AR 버튼 (모바일에서만) */}
-                  {isARSupported && (
-                    <div className="absolute bottom-4 right-4">
-                      <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-                        📱 AR로 보기
-                      </Button>
-                    </div>
-                  )}
+                  <ul className="space-y-2">
+                    {tier.items.map((item, index) => (
+                      <li key={index} className="flex items-center text-sm text-gray-600">
+                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-3"></div>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Right: Product Preview */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-900">상품 미리보기</h3>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleRotate} disabled={isRotating}>
+                  <RotateCcw className={`w-4 h-4 mr-2 ${isRotating ? "animate-spin" : ""}`} />
+                  회전
+                </Button>
+                <Button variant="outline" size="sm">
+                  <ZoomIn className="w-4 h-4 mr-2" />
+                  확대
+                </Button>
+              </div>
+            </div>
+
+            {/* 3D Preview Area */}
+            <Card className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100">
+              <CardContent className="p-8 h-full flex items-center justify-center">
+                <div className={`relative transition-transform duration-1000 ${isRotating ? "rotate-360" : ""}`}>
+                  <Image
+                    src={selectedPreview.image || "/placeholder.svg"}
+                    alt={selectedPreview.title}
+                    width={300}
+                    height={300}
+                    className="object-contain"
+                  />
+
+                  {/* 3D Effect Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 rounded-lg"></div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* 제품 정보 */}
-            <div className="mt-6 text-center">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {products.find((p) => p.id === selectedProduct)?.name}
-              </h3>
-              <p className="text-gray-600 mb-2">{products.find((p) => p.id === selectedProduct)?.description}</p>
-              <div className="text-lg font-bold text-purple-600">
-                {products.find((p) => p.id === selectedProduct)?.price}
-              </div>
-            </div>
-          </div>
+            {/* Product Info */}
+            <Card>
+              <CardContent className="p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">{selectedPreview.title}</h4>
+                <p className="text-gray-600 mb-4">{selectedReward?.description}</p>
 
-          {/* Product Selection */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">굿즈 종류 선택</h3>
-              <div className="grid gap-4">
-                {products.map((product) => {
-                  const Icon = product.icon
-                  return (
-                    <Card
-                      key={product.id}
-                      className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
-                        selectedProduct === product.id ? "ring-2 ring-purple-500 bg-purple-50" : "hover:bg-gray-50"
-                      }`}
-                      onClick={() => setSelectedProduct(product.id)}
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-center space-x-4">
-                          <div
-                            className={`p-3 rounded-lg ${
-                              selectedProduct === product.id
-                                ? "bg-purple-100 text-purple-600"
-                                : "bg-gray-100 text-gray-600"
-                            }`}
-                          >
-                            <Icon className="h-6 w-6" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900">{product.name}</h4>
-                            <p className="text-sm text-gray-600">{product.description}</p>
-                            <div className="text-sm font-medium text-purple-600 mt-1">{product.price}</div>
-                          </div>
-                          {selectedProduct === product.id && (
-                            <div className="text-purple-600">
-                              <Badge className="bg-purple-100 text-purple-800">선택됨</Badge>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-            </div>
+                <div className="flex gap-3">
+                  <Button className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600">
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    지금 후원하기
+                  </Button>
+                  <Button variant="outline">
+                    <Heart className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Features */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6">
-              <h4 className="font-semibold text-gray-900 mb-4">✨ 굿즈 제작 특징</h4>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li>• 고해상도 AI 이미지 사용</li>
-                <li>• 프리미엄 소재로 제작</li>
-                <li>• 개별 맞춤 제작</li>
-                <li>• 전국 무료배송</li>
-                <li>• 품질보증 30일</li>
-              </ul>
-            </div>
+            {/* Additional Options */}
+            <Tabs defaultValue="colors" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="colors">색상</TabsTrigger>
+                <TabsTrigger value="sizes">사이즈</TabsTrigger>
+                <TabsTrigger value="materials">소재</TabsTrigger>
+              </TabsList>
 
-            {/* CTA */}
-            <div className="space-y-3">
-              <Button size="lg" className="w-full bg-purple-600 hover:bg-purple-700">
-                이 굿즈로 펀딩 참여하기
-              </Button>
-              <p className="text-xs text-gray-500 text-center">* 실제 굿즈는 펀딩 완료 후 제작됩니다</p>
-            </div>
-          </div>
-        </div>
+              <TabsContent value="colors" className="mt-4">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-white border-2 border-gray-300 rounded-full cursor-pointer"></div>
+                  <div className="w-8 h-8 bg-black rounded-full cursor-pointer"></div>
+                  <div className="w-8 h-8 bg-blue-500 rounded-full cursor-pointer"></div>
+                  <div className="w-8 h-8 bg-red-500 rounded-full cursor-pointer"></div>
+                </div>
+              </TabsContent>
 
-        {/* Additional Info */}
-        <div className="mt-16 grid md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🎨</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">고품질 프린팅</h4>
-            <p className="text-sm text-gray-600">
-              AI 이미지를 최고 품질로 프린팅하여 선명하고 생생한 결과물을 제공합니다
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📦</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">안전한 포장</h4>
-            <p className="text-sm text-gray-600">소중한 굿즈가 안전하게 배송될 수 있도록 꼼꼼한 포장으로 발송합니다</p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">💝</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">특별한 선물</h4>
-            <p className="text-sm text-gray-600">세상에 하나뿐인 우리 아이 굿즈로 특별한 추억을 만들어보세요</p>
+              <TabsContent value="sizes" className="mt-4">
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="cursor-pointer">
+                    S
+                  </Badge>
+                  <Badge variant="outline" className="cursor-pointer">
+                    M
+                  </Badge>
+                  <Badge variant="outline" className="cursor-pointer">
+                    L
+                  </Badge>
+                  <Badge variant="outline" className="cursor-pointer">
+                    XL
+                  </Badge>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="materials" className="mt-4">
+                <p className="text-sm text-gray-600">고품질 면 100% 소재로 제작되며, 친환경 잉크를 사용합니다.</p>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }

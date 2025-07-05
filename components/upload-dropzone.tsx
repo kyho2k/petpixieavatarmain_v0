@@ -3,207 +3,109 @@
 import { useState, useCallback } from "react"
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Upload, X, CheckCircle, AlertCircle } from "lucide-react"
-import Image from "next/image"
+import { Card } from "@/components/ui/card"
+import { Upload, ImageIcon, AlertCircle } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface UploadDropzoneProps {
-  onUploaded: (url: string) => void
-  maxSize?: number
-  accept?: Record<string, string[]>
+  onImageUpload: (imageUrl: string) => void
 }
 
-export default function UploadDropzone({
-  onUploaded,
-  maxSize = 5 * 1024 * 1024, // 5MB
-  accept = { "image/*": [".png", ".jpg", ".jpeg", ".webp"] },
-}: UploadDropzoneProps) {
-  const [uploadProgress, setUploadProgress] = useState(0)
+export function UploadDropzone({ onImageUpload }: UploadDropzoneProps) {
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-
-  const uploadFile = async (file: File) => {
-    try {
-      setIsUploading(true)
-      setError(null)
-      setUploadProgress(0)
-
-      // Get presigned URL
-      const signResponse = await fetch("/api/sign-upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-        }),
-      })
-
-      if (!signResponse.ok) {
-        throw new Error("Failed to get upload URL")
-      }
-
-      const { uploadUrl, publicUrl } = await signResponse.json()
-
-      // Upload file with progress tracking
-      const xhr = new XMLHttpRequest()
-
-      xhr.upload.addEventListener("progress", (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100)
-          setUploadProgress(progress)
-        }
-      })
-
-      xhr.addEventListener("load", () => {
-        if (xhr.status === 200) {
-          setUploadProgress(100)
-          onUploaded(publicUrl)
-          setTimeout(() => {
-            setIsUploading(false)
-          }, 500)
-        } else {
-          throw new Error("Upload failed")
-        }
-      })
-
-      xhr.addEventListener("error", () => {
-        throw new Error("Upload failed")
-      })
-
-      xhr.open("PUT", uploadUrl)
-      xhr.setRequestHeader("Content-Type", file.type)
-      xhr.send(file)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed")
-      setIsUploading(false)
-      setUploadProgress(0)
-    }
-  }
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0]
       if (!file) return
 
-      // Validate file size
-      if (file.size > maxSize) {
-        setError(`파일 크기가 너무 큽니다. 최대 ${Math.round(maxSize / 1024 / 1024)}MB까지 업로드 가능합니다.`)
-        return
+      setIsUploading(true)
+      setError(null)
+
+      try {
+        // Create a local URL for preview
+        const imageUrl = URL.createObjectURL(file)
+
+        // In a real app, you would upload to a cloud storage service
+        // For demo purposes, we'll use the local URL
+        onImageUpload(imageUrl)
+      } catch (err) {
+        setError("파일 업로드 중 오류가 발생했습니다.")
+        console.error("Upload error:", err)
+      } finally {
+        setIsUploading(false)
       }
-
-      // Create preview
-      const preview = URL.createObjectURL(file)
-      setPreviewUrl(preview)
-      setUploadedFile(file)
-
-      // Start upload
-      await uploadFile(file)
     },
-    [maxSize, onUploaded],
+    [onImageUpload],
   )
 
-  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
-    accept,
+    accept: {
+      "image/*": [".jpeg", ".jpg", ".png", ".webp"],
+    },
     maxFiles: 1,
-    maxSize,
+    maxSize: 10 * 1024 * 1024, // 10MB
+    disabled: isUploading,
   })
 
-  const removeFile = () => {
-    setUploadedFile(null)
-    setPreviewUrl(null)
-    setError(null)
-    setUploadProgress(0)
-    setIsUploading(false)
-  }
-
   return (
-    <div className="w-full max-w-md mx-auto">
-      {!uploadedFile ? (
-        <Card
-          {...getRootProps()}
-          className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-            isDragActive ? "border-purple-500 bg-purple-50" : "border-gray-300"
-          } ${error ? "border-red-500" : ""}`}
-        >
-          <CardContent className="p-8 text-center">
-            <input {...getInputProps()} />
-
-            <div className="mb-4">
-              <Upload className={`h-12 w-12 mx-auto ${isDragActive ? "text-purple-500" : "text-gray-400"}`} />
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-lg font-medium text-gray-900">
-                {isDragActive ? "파일을 여기에 놓으세요" : "반려동물 사진을 업로드하세요"}
-              </p>
-              <p className="text-sm text-gray-500">PNG, JPG, JPEG, WebP 파일 (최대 5MB)</p>
-              <Button variant="outline" className="mt-4 bg-transparent">
-                파일 선택하기
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-4">
-              {previewUrl && (
-                <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                  <Image src={previewUrl || "/placeholder.svg"} alt="Preview" fill className="object-cover" />
-                </div>
-              )}
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-gray-900 truncate">{uploadedFile.name}</p>
-                  <Button variant="ghost" size="sm" onClick={removeFile} disabled={isUploading}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <p className="text-xs text-gray-500 mb-3">{(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-
-                {isUploading && (
-                  <div className="space-y-2">
-                    <Progress value={uploadProgress} className="h-2" />
-                    <p className="text-xs text-gray-500">업로드 중... {uploadProgress}%</p>
-                  </div>
-                )}
-
-                {!isUploading && uploadProgress === 100 && (
-                  <div className="flex items-center space-x-2 text-green-600">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="text-sm">업로드 완료</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <Card
+      {...getRootProps()}
+      className={cn(
+        "border-2 border-dashed transition-all duration-200 cursor-pointer hover:border-purple-400",
+        isDragActive && !isDragReject && "border-purple-500 bg-purple-50",
+        isDragReject && "border-red-500 bg-red-50",
+        isUploading && "cursor-not-allowed opacity-50",
       )}
+    >
+      <input {...getInputProps()} />
+      <div className="p-8 text-center">
+        {isUploading ? (
+          <div className="space-y-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto animate-pulse">
+              <Upload className="w-6 h-6 text-purple-600" />
+            </div>
+            <p className="text-gray-600">업로드 중...</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
+              <ImageIcon className="w-6 h-6 text-purple-600" />
+            </div>
 
-      {error && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center space-x-2 text-red-700">
-            <AlertCircle className="h-4 w-4" />
+            <div>
+              <h3 className="font-semibold text-lg mb-2">
+                {isDragActive ? "파일을 여기에 놓으세요" : "반려동물 사진 업로드"}
+              </h3>
+              <p className="text-gray-600 text-sm mb-4">드래그 앤 드롭하거나 클릭해서 파일을 선택하세요</p>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="border-purple-300 text-purple-600 hover:bg-purple-50 bg-transparent"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              파일 선택
+            </Button>
+
+            <div className="text-xs text-gray-500 space-y-1">
+              <p>지원 형식: JPG, PNG, WEBP</p>
+              <p>최대 크기: 10MB</p>
+              <p>권장: 정면을 바라보는 선명한 사진</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+            <AlertCircle className="w-4 h-4" />
             <span className="text-sm">{error}</span>
           </div>
-        </div>
-      )}
-
-      {fileRejections.length > 0 && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center space-x-2 text-red-700">
-            <AlertCircle className="h-4 w-4" />
-            <span className="text-sm">{fileRejections[0].errors[0].message}</span>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </Card>
   )
 }

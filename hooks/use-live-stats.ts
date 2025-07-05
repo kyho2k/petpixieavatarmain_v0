@@ -2,68 +2,46 @@
 
 import { useState, useEffect } from "react"
 
-interface LiveStats {
-  todayGenerations: number
-  averageProcessingTime: number
-  satisfactionRate: number
-  activeUsers: number
-  fundingProgress: number
-  fundingAmount: number
-  backers: number
-  daysLeft: number
+export interface LiveStats {
+  totalGenerated: number
+  todayGenerated: number
+  todayUsers: number
+  averageTime: number
+  successRate: number
 }
 
 export function useLiveStats() {
   const [stats, setStats] = useState<LiveStats>({
-    todayGenerations: 0,
-    averageProcessingTime: 0,
-    satisfactionRate: 0,
-    activeUsers: 0,
-    fundingProgress: 0,
-    fundingAmount: 0,
-    backers: 0,
-    daysLeft: 0,
+    totalGenerated: 1247,
+    todayGenerated: 58,
+    todayUsers: 234,
+    averageTime: 62,
+    successRate: 94,
   })
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch("/api/stats")
-        if (!response.ok) {
-          throw new Error("Failed to fetch stats")
-        }
-        const data = await response.json()
-        setStats(data)
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load stats")
-      } finally {
-        setIsLoading(false)
-      }
-    }
+    // Simulate initial loading
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000)
 
-    // Initial fetch
-    fetchStats()
+    // Simulate real-time updates
+    const updateInterval = setInterval(() => {
+      setStats((prev) => ({
+        ...prev,
+        totalGenerated: prev.totalGenerated + Math.floor(Math.random() * 3),
+        todayGenerated: prev.todayGenerated + Math.floor(Math.random() * 2),
+        todayUsers: prev.todayUsers + Math.floor(Math.random() * 5),
+        averageTime: Math.max(45, Math.min(90, prev.averageTime + (Math.random() - 0.5) * 10)),
+      }))
+    }, 15000) // Update every 15 seconds
 
-    // Set up SSE for real-time updates
-    const eventSource = new EventSource("/api/stats/live")
-
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      setStats(data)
-    }
-
-    eventSource.onerror = () => {
-      setError("Real-time connection lost")
-    }
-
-    // Cleanup
     return () => {
-      eventSource.close()
+      clearTimeout(loadingTimer)
+      clearInterval(updateInterval)
     }
   }, [])
 
-  return { stats, isLoading, error }
+  return { stats, isLoading }
 }

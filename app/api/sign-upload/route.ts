@@ -4,14 +4,13 @@ export async function POST(request: NextRequest) {
   try {
     const { fileName, fileType, fileSize } = await request.json()
 
-    // Validate file
+    // Validate input
     if (!fileName || !fileType || !fileSize) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
     if (fileSize > 5 * 1024 * 1024) {
-      // 5MB limit
-      return NextResponse.json({ error: "File too large" }, { status: 400 })
+      return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 })
     }
 
     if (!fileType.startsWith("image/")) {
@@ -24,10 +23,10 @@ export async function POST(request: NextRequest) {
     const extension = fileName.split(".").pop()
     const uniqueFileName = `uploads/${timestamp}-${randomString}.${extension}`
 
-    // In a real implementation, you would generate a presigned URL for S3 or similar
-    // For now, we'll simulate the response
-    const uploadUrl = `https://your-storage.com/presigned-upload-url`
-    const publicUrl = `https://your-storage.com/${uniqueFileName}`
+    // In production, you would generate a real presigned URL for S3/R2/etc.
+    // For demo purposes, we'll return placeholder URLs
+    const uploadUrl = `https://api.cloudflare.com/client/v4/accounts/demo/images/v1/direct_upload`
+    const publicUrl = `https://imagedelivery.net/demo/${uniqueFileName}`
 
     return NextResponse.json({
       uploadUrl,
